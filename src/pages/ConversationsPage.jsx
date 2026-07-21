@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BellRing, Clock3, RefreshCcw, Send } from 'lucide-react';
 import api from '../api';
 import PageHeader from '../components/PageHeader';
+import { formatAngolaDateTime } from '../dateTime';
 import '../reminders.css';
 
 const statusLabels = {
@@ -15,11 +16,6 @@ const typeLabels = {
   DAY_BEFORE: '24 horas antes',
   SAME_DAY: 'No dia da consulta',
 };
-
-function formatDateTime(value) {
-  if (!value) return '—';
-  return new Date(value).toLocaleString('pt-BR');
-}
 
 function apiMessage(error, fallback) {
   return error?.response?.data?.message || fallback;
@@ -92,7 +88,7 @@ export default function ConversationsPage() {
       <PageHeader
         eyebrow="Comunicação"
         title="Lembretes de consultas"
-        description="Fila simulada para validar mensagens 24 horas antes e no dia da consulta, sem integração externa."
+        description="Fila simulada para validar mensagens 24 horas antes e no dia da consulta, sem integração externa. Todos os horários são exibidos na hora de Angola."
         action={(
           <button type="button" className="secondary-button compact" onClick={load}>
             <RefreshCcw size={18} /> Atualizar
@@ -157,8 +153,8 @@ export default function ConversationsPage() {
                   <span>{row.channel === 'WHATSAPP_SIMULATED' ? 'WhatsApp simulado' : row.channel}</span>
                 </td>
                 <td>
-                  <strong>{formatDateTime(row.scheduledFor)}</strong>
-                  <span>{row.sentAt ? `Enviado em ${formatDateTime(row.sentAt)}` : 'Ainda não enviado'}</span>
+                  <strong>{formatAngolaDateTime(row.scheduledFor)}</strong>
+                  <span>{row.sentAt ? `Enviado em ${formatAngolaDateTime(row.sentAt)}` : 'Ainda não enviado'}</span>
                 </td>
                 <td><div className="reminder-message">{row.message}</div></td>
                 <td>
