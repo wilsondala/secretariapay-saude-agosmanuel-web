@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BellRing, Clock3, RefreshCcw, Send } from 'lucide-react';
+import {
+  BellRing,
+  CheckCheck,
+  Clock3,
+  RefreshCcw,
+  RotateCcw,
+  Send,
+  TriangleAlert,
+} from 'lucide-react';
 import api from '../api';
 import PageHeader from '../components/PageHeader';
 import { formatAngolaDateTime } from '../dateTime';
@@ -8,6 +16,7 @@ import '../reminders.css';
 const statusLabels = {
   PENDING: 'Pendente',
   SENT: 'Enviado',
+  DELIVERED: 'Entregue',
   CANCELLED: 'Cancelado',
   FAILED: 'Falhou',
 };
@@ -26,7 +35,7 @@ export default function ConversationsPage() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [sendingId, setSendingId] = useState(null);
+  const [workingKey, setWorkingKey] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -50,6 +59,8 @@ export default function ConversationsPage() {
   const summary = useMemo(() => ({
     pending: rows.filter((row) => row.status === 'PENDING').length,
     sent: rows.filter((row) => row.status === 'SENT').length,
+    delivered: rows.filter((row) => row.status === 'DELIVERED').length,
+    failed: rows.filter((row) => row.status === 'FAILED').length,
     cancelled: rows.filter((row) => row.status === 'CANCELLED').length,
   }), [rows]);
 
@@ -68,19 +79,24 @@ export default function ConversationsPage() {
     }
   }
 
-  async function sendNow(id) {
-    setSendingId(id);
+  async function runAction(id, action, successMessage, fallbackMessage) {
+    const key = `${id}:${action}`;
+    setWorkingKey(key);
     setError('');
     setSuccess('');
     try {
-      await api.post(`/api/v1/reminders/${id}/send-now`);
-      setSuccess('Envio simulado concluído e registado no histórico.');
+      await api.post(`/api/v1/reminders/${id}/${action}`);
+      setSuccess(successMessage);
       await load();
     } catch (requestError) {
-      setError(apiMessage(requestError, 'Não foi possível simular o envio.'));
+      setError(apiMessage(requestError, fallbackMessage));
     } finally {
-      setSendingId(null);
+      setWorkingKey('');
     }
+  }
+
+  function actionBusy(id) {
+    return workingKey.startsWith(`${id}:`);
   }
 
   return (
@@ -88,7 +104,7 @@ export default function ConversationsPage() {
       <PageHeader
         eyebrow="Comunicação"
         title="Lembretes de consultas"
-        description="Fila simulada para validar mensagens 24 horas antes e no dia da consulta, sem integração externa. Todos os horários são exibidos na hora de Angola."
+        description="Fila simulada para validar envio, falha, reenvio e entrega, sem integração externa. Todos os horários são exibidos na hora de Angola."
         action={(
           <button type="button" className="secondary-button compact" onClick={load}>
             <RefreshCcw size={18} /> Atualizar
@@ -99,6 +115,8 @@ export default function ConversationsPage() {
       <div className="reminder-summary">
         <article className="panel"><span>Pendentes</span><strong>{summary.pending}</strong></article>
         <article className="panel"><span>Enviados</span><strong>{summary.sent}</strong></article>
+        <article className="panel"><span>Entregues</span><strong>{summary.delivered}</strong></article>
+        <article className="panel"><span>Falhas</span><strong>{summary.failed}</strong></article>
         <article className="panel"><span>Cancelados</span><strong>{summary.cancelled}</strong></article>
       </div>
 
@@ -154,25 +172,95 @@ export default function ConversationsPage() {
                 </td>
                 <td>
                   <strong>{formatAngolaDateTime(row.scheduledFor)}</strong>
-                  <span>{row.sentAt ? `Enviado em ${formatAngolaDateTime(row.sentAt)}` : 'Ainda não enviado'}</span>
+                  <span>
+                    {row.deliveredAt
+                      ? `Entregue em ${formatAngolaDateTime(row.deliveredAt)}`
+                      : row.sentAt
+                        ? `Enviado em ${formatAngolaDateTime(row.sentAt)}`
+                        : row.lastAttemptAt
+                          ? `Última tentativa em ${formatAngolaDateTime(row.lastAttemptAt)}`
+                          : 'Ainda não enviado'}
+                  </span>
                 </td>
-                <td><div className="reminder-message">{row.message}</div></td>
+                <td>
+                  <div className="reminder-message">{row.message}</div>
+                  {row.failureReason && <small className="reminder-failure">{row.failureReason}</small>}
+                </td>
                 <td>
                   <span className={`status-badge status-reminder-${row.status.toLowerCase()}`}>
                     {statusLabels[row.status] || row.status}
                   </span>
+                  <small className="reminder-attempts">
+                    {row.attemptCount} tentativa{row.attemptCount === 1 ? '' : 's'}
+                  </small>
                 </td>
                 <td>
-                  {row.status === 'PENDING' ? (
-                    <button
-                      type="button"
-                      className="secondary-button reminder-send-button"
-                      disabled={sendingId === row.id}
-                      onClick={() => sendNow(row.id)}
-                    >
-                      <Send size={16} /> {sendingId === row.id ? 'A enviar...' : 'Simular envio'}
-                    </button>
-                  ) : '—'}
+                  <div className="reminder-row-actions">
+                    {row.status === 'PENDING' && (
+                      <>
+                        <button
+                          type="button"
+                          className="secondary-button reminder-send-button"
+                          disabled={actionBusy(row.id)}
+                          onClick={() => runAction(
+                            row.id,
+                            'send-now',
+                            'Envio simulado concluído.',
+                            'Não foi possível simular o envio.',
+                          )}
+                        >
+                          <Send size={16} /> Simular envio
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button reminder-fail-button"
+                          disabled={actionBusy(row.id)}
+                          onClick={() => runAction(
+                            row.id,
+                            'simulate-failure',
+                            'Falha simulada e registada.',
+                            'Não foi possível simular a falha.',
+                          )}
+                        >
+                          <TriangleAlert size={16} /> Simular falha
+                        </button>
+                      </>
+                    )}
+
+                    {row.status === 'FAILED' && (
+                      <button
+                        type="button"
+                        className="secondary-button reminder-send-button"
+                        disabled={actionBusy(row.id)}
+                        onClick={() => runAction(
+                          row.id,
+                          'retry',
+                          'Reenvio simulado concluído.',
+                          'Não foi possível reenviar o lembrete.',
+                        )}
+                      >
+                        <RotateCcw size={16} /> Reenviar
+                      </button>
+                    )}
+
+                    {row.status === 'SENT' && (
+                      <button
+                        type="button"
+                        className="secondary-button reminder-delivery-button"
+                        disabled={actionBusy(row.id)}
+                        onClick={() => runAction(
+                          row.id,
+                          'confirm-delivery',
+                          'Entrega simulada confirmada.',
+                          'Não foi possível confirmar a entrega.',
+                        )}
+                      >
+                        <CheckCheck size={16} /> Confirmar entrega
+                      </button>
+                    )}
+
+                    {['DELIVERED', 'CANCELLED'].includes(row.status) && '—'}
+                  </div>
                 </td>
               </tr>
             ))}
