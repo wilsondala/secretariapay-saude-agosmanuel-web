@@ -1,6 +1,6 @@
 .reminder-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -48,15 +48,48 @@
   color: var(--muted);
 }
 
+.reminder-failure {
+  display: block;
+  max-width: 440px;
+  margin-top: 8px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
 .reminder-type {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
 
-.reminder-send-button {
+.reminder-attempts {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+}
+
+.reminder-row-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.reminder-send-button,
+.reminder-fail-button,
+.reminder-delivery-button {
   min-height: 36px;
   padding: 0 12px;
+  justify-content: center;
+}
+
+.reminder-fail-button {
+  border-color: rgba(167, 55, 55, .42);
+  color: var(--danger);
+}
+
+.reminder-delivery-button {
+  border-color: rgba(30, 122, 74, .42);
+  color: var(--success);
 }
 
 .status-reminder-pending {
@@ -65,6 +98,11 @@
 }
 
 .status-reminder-sent {
+  background: rgba(27, 102, 172, .14);
+  color: #72b7f1;
+}
+
+.status-reminder-delivered {
   background: rgba(30, 122, 74, .14);
   color: var(--success);
 }
@@ -75,13 +113,23 @@
   color: var(--danger);
 }
 
+@media (max-width: 1200px) {
+  .reminder-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
   .reminder-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 720px) {
+  .reminder-summary {
+    grid-template-columns: 1fr;
+  }
+
   .reminder-toolbar {
     align-items: stretch;
     flex-direction: column;
