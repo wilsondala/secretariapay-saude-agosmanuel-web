@@ -42,6 +42,7 @@ function apiMessage(error, fallback) {
 
 export default function AppointmentsPage() {
   const [rows, setRows] = useState([]);
+  const [professionals, setProfessionals] = useState([]);
   const [filter, setFilter] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -65,7 +66,17 @@ export default function AppointmentsPage() {
     }
   }
 
+  async function loadProfessionals() {
+    try {
+      const response = await api.get('/api/v1/professionals', { params: { active: true } });
+      setProfessionals(response.data);
+    } catch {
+      setProfessionals([]);
+    }
+  }
+
   useEffect(() => { load(); }, [filter]);
+  useEffect(() => { loadProfessionals(); }, []);
 
   const editorStatuses = useMemo(
     () => allowedTransitions[selected?.status] || statuses,
@@ -204,7 +215,18 @@ export default function AppointmentsPage() {
                   <input type="time" value={draft.scheduledTime} onChange={(event) => setDraft({ ...draft, scheduledTime: event.target.value })} />
                 </label>
                 <label>Profissional responsável
-                  <input value={draft.assignedProfessional} maxLength="140" placeholder="Nome do profissional" onChange={(event) => setDraft({ ...draft, assignedProfessional: event.target.value })} />
+                  <input
+                    list="active-professionals"
+                    value={draft.assignedProfessional}
+                    maxLength="140"
+                    placeholder={professionals.length ? 'Selecione ou escreva o nome' : 'Nome do profissional'}
+                    onChange={(event) => setDraft({ ...draft, assignedProfessional: event.target.value })}
+                  />
+                  <datalist id="active-professionals">
+                    {professionals.map((professional) => (
+                      <option key={professional.id} value={professional.fullName}>{professional.specialty}</option>
+                    ))}
+                  </datalist>
                 </label>
               </div>
               <label>Notas internas
