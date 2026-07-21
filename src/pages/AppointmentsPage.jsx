@@ -43,6 +43,9 @@ function apiMessage(error, fallback) {
 export default function AppointmentsPage() {
   const [rows, setRows] = useState([]);
   const [professionals, setProfessionals] = useState([]);
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [timesLoading, setTimesLoading] = useState(false);
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [filter, setFilter] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -83,6 +86,48 @@ export default function AppointmentsPage() {
     [selected],
   );
 
+  const selectedProfessional = useMemo(
+    () => professionals.find((professional) => professional.fullName === draft?.assignedProfessional),
+    [professionals, draft?.assignedProfessional],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAvailableTimes() {
+      if (!selected?.id || !draft?.scheduledDate || !selectedProfessional?.id) {
+        setAvailableTimes([]);
+        setAvailabilityMessage('Selecione o profissional e a data para consultar os horários livres.');
+        return;
+      }
+
+      setTimesLoading(true);
+      setAvailabilityMessage('');
+      try {
+        const response = await api.get(
+          `/api/v1/professionals/${selectedProfessional.id}/available-times`,
+          { params: { date: draft.scheduledDate, appointmentId: selected.id } },
+        );
+        if (cancelled) return;
+        setAvailableTimes(response.data.availableTimes || []);
+        setAvailabilityMessage(
+          response.data.availableTimes?.length
+            ? `${response.data.availableTimes.length} horário(s) disponível(is) para esta data.`
+            : 'Não existem horários disponíveis para esta data.',
+        );
+      } catch (requestError) {
+        if (cancelled) return;
+        setAvailableTimes([]);
+        setAvailabilityMessage(apiMessage(requestError, 'Não foi possível consultar a disponibilidade.'));
+      } finally {
+        if (!cancelled) setTimesLoading(false);
+      }
+    }
+
+    loadAvailableTimes();
+    return () => { cancelled = true; };
+  }, [selected?.id, draft?.scheduledDate, selectedProfessional?.id]);
+
   async function openEditor(row) {
     setSelected(row);
     setDraft({
@@ -92,6 +137,8 @@ export default function AppointmentsPage() {
       assignedProfessional: row.assignedProfessional || '',
       internalNotes: row.internalNotes || '',
     });
+    setAvailableTimes([]);
+    setAvailabilityMessage('');
     setEditorError('');
     setHistory([]);
     setHistoryLoading(true);
@@ -110,6 +157,8 @@ export default function AppointmentsPage() {
     setSelected(null);
     setDraft(null);
     setHistory([]);
+    setAvailableTimes([]);
+    setAvailabilityMessage('');
     setEditorError('');
   }
 
@@ -208,27 +257,55 @@ export default function AppointmentsPage() {
                     {editorStatuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
                   </select>
                 </label>
-                <label>Data agendada
-                  <input type="date" value={draft.scheduledDate} onChange={(event) => setDraft({ ...draft, scheduledDate: event.target.value })} />
-                </label>
-                <label>Hora
-                  <input type="time" value={draft.scheduledTime} onChange={(event) => setDraft({ ...draft, scheduledTime: event.target.value })} />
-                </label>
                 <label>Profissional responsável
-                  <input
-                    list="active-professionals"
+                  <select
                     value={draft.assignedProfessional}
-                    maxLength="140"
-                    placeholder={professionals.length ? 'Selecione ou escreva o nome' : 'Nome do profissional'}
-                    onChange={(event) => setDraft({ ...draft, assignedProfessional: event.target.value })}
-                  />
-                  <datalist id="active-professionals">
+                    onChange={(event) => setDraft({
+                      ...draft,
+                      assignedProfessional: event.target.value,
+                      scheduledTime: '',
+                    })}
+                  >
+                    <option value="">Selecione</option>
                     {professionals.map((professional) => (
-                      <option key={professional.id} value={professional.fullName}>{professional.specialty}</option>
+                      <option key={professional.id} value={professional.fullName}>
+                        {professional.fullName} — {professional.specialty}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
+                </label>
+                <label>Data agendada
+                  <input
+                    type="date"
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={draft.scheduledDate}
+                    onChange={(event) => setDraft({
+                      ...draft,
+                      scheduledDate: event.target.value,
+                      scheduledTime: '',
+                    })}
+                  />
+                </label>
+                <label>Horário disponível
+                  <select
+                    value={draft.scheduledTime}
+                    disabled={!draft.scheduledDate || !selectedProfessional || timesLoading}
+                    onChange={(event) => setDraft({ ...draft, scheduledTime: event.target.value })}
+                  >
+                    <option value="">{timesLoading ? 'A consultar...' : 'Selecione'}</option>
+                    {draft.scheduledTime && !availableTimes.includes(draft.scheduledTime) && (
+                      <option value={draft.scheduledTime}>{draft.scheduledTime} — horário atual</option>
+                    )}
+                    {availableTimes.map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
                 </label>
               </div>
+
+              <div className={`availability-feedback ${availableTimes.length ? 'available' : ''}`}>
+                <CalendarClock size={18} />
+                <span>{timesLoading ? 'A consultar disponibilidade...' : availabilityMessage}</span>
+              </div>
+
               <label>Notas internas
                 <textarea rows="4" maxLength="1000" value={draft.internalNotes} placeholder="Informações operacionais para a equipa" onChange={(event) => setDraft({ ...draft, internalNotes: event.target.value })} />
               </label>
