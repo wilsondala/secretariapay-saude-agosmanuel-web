@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AppointmentsPage from './pages/AppointmentsPage';
 import PatientsPage from './pages/PatientsPage';
+import ProfessionalsPage from './pages/ProfessionalsPage';
 import ServicesPage from './pages/ServicesPage';
 import ConversationsPage from './pages/ConversationsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -30,6 +31,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="consultas" element={<AppointmentsPage />} />
         <Route path="pacientes" element={<PatientsPage />} />
+        <Route path="profissionais" element={<ProfessionalsPage />} />
         <Route path="servicos" element={<ServicesPage />} />
         <Route path="conversas" element={<ConversationsPage />} />
         <Route path="configuracoes" element={<SettingsPage />} />
