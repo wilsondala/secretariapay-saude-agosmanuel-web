@@ -1,0 +1,103 @@
+/* Fase 2 — gestão operacional de consultas */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(6, 25, 16, .58);
+  backdrop-filter: blur(3px);
+}
+
+.appointment-drawer {
+  width: min(680px, 100%);
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text);
+  padding: 30px;
+  box-shadow: -24px 0 70px rgba(0, 0, 0, .22);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-header h2 { margin: 0 0 7px; font-size: 28px; }
+.drawer-header p { margin: 0; }
+.appointment-editor-form { display: grid; gap: 18px; padding: 26px 0; }
+.appointment-editor-form input,
+.appointment-editor-form select,
+.appointment-editor-form textarea {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.availability-feedback {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.availability-feedback.available {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  color: var(--success);
+}
+
+.availability-feedback svg {
+  flex: 0 0 auto;
+}
+
+.history-section { border-top: 1px solid var(--border); padding-top: 24px; }
+.history-title { display: flex; align-items: center; gap: 9px; color: var(--primary); }
+.history-title h3 { margin: 0; font-size: 18px; }
+.history-list { display: grid; margin-top: 20px; }
+.history-list article {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  padding-bottom: 22px;
+}
+.history-list article:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 12px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.history-dot {
+  position: relative;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+.history-list strong,
+.history-list small { display: block; }
+.history-list small { margin-top: 4px; color: var(--muted); }
+.history-list p { margin: 7px 0 0; font-size: 13px; }
+
+@media (max-width: 720px) {
+  .appointment-drawer { padding: 22px 18px; }
+  .drawer-header h2 { font-size: 23px; }
+}

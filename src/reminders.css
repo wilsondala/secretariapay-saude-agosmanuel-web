@@ -1,0 +1,149 @@
+.reminder-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.reminder-summary .panel {
+  padding: 18px 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.reminder-summary span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.reminder-summary strong {
+  font-size: 26px;
+}
+
+.reminder-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.reminder-toolbar label {
+  width: 260px;
+}
+
+.reminder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.reminder-message {
+  max-width: 440px;
+  white-space: normal;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.reminder-failure {
+  display: block;
+  max-width: 440px;
+  margin-top: 8px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.reminder-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.reminder-attempts {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+}
+
+.reminder-row-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.reminder-send-button,
+.reminder-fail-button,
+.reminder-delivery-button {
+  min-height: 36px;
+  padding: 0 12px;
+  justify-content: center;
+}
+
+.reminder-fail-button {
+  border-color: rgba(167, 55, 55, .42);
+  color: var(--danger);
+}
+
+.reminder-delivery-button {
+  border-color: rgba(30, 122, 74, .42);
+  color: var(--success);
+}
+
+.status-reminder-pending {
+  background: rgba(155, 101, 18, .14);
+  color: var(--warning);
+}
+
+.status-reminder-sent {
+  background: rgba(27, 102, 172, .14);
+  color: #72b7f1;
+}
+
+.status-reminder-delivered {
+  background: rgba(30, 122, 74, .14);
+  color: var(--success);
+}
+
+.status-reminder-cancelled,
+.status-reminder-failed {
+  background: rgba(167, 55, 55, .13);
+  color: var(--danger);
+}
+
+@media (max-width: 1200px) {
+  .reminder-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .reminder-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .reminder-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .reminder-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reminder-toolbar label {
+    width: 100%;
+  }
+
+  .reminder-actions {
+    justify-content: stretch;
+  }
+
+  .reminder-actions button {
+    flex: 1;
+  }
+}

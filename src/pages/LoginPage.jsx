@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, LockKeyhole } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { setCredentials } from '../api';
+import '../login.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
