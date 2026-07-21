@@ -1,0 +1,68 @@
+.login-page {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.login-panel,
+.login-visual {
+  min-height: 0;
+}
+
+.login-panel {
+  overflow-y: auto;
+  padding-top: clamp(24px, 5vh, 50px);
+  padding-bottom: clamp(24px, 5vh, 50px);
+}
+
+.login-brand {
+  margin-top: clamp(24px, 6vh, 60px);
+  margin-bottom: clamp(18px, 3vh, 24px);
+}
+
+.login-visual {
+  overflow: hidden;
+  padding: clamp(42px, 6vw, 80px);
+}
+
+@media (max-height: 720px) and (min-width: 1001px) {
+  .login-panel {
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+
+  .login-brand {
+    margin-top: 22px;
+    margin-bottom: 16px;
+  }
+
+  .login-panel h1 {
+    font-size: 34px;
+  }
+
+  .stack-form {
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .login-visual {
+    align-items: center;
+  }
+
+  .login-visual h2 {
+    font-size: clamp(38px, 4vw, 48px);
+  }
+}
+
+@media (max-width: 1000px) {
+  .login-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .login-panel {
+    min-height: 100dvh;
+    overflow: visible;
+  }
+}
