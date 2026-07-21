@@ -39,6 +39,29 @@
   border-color: var(--border);
 }
 
+.availability-feedback {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.availability-feedback.available {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  color: var(--success);
+}
+
+.availability-feedback svg {
+  flex: 0 0 auto;
+}
+
 .history-section { border-top: 1px solid var(--border); padding-top: 24px; }
 .history-title { display: flex; align-items: center; gap: 9px; color: var(--primary); }
 .history-title h3 { margin: 0; font-size: 18px; }
