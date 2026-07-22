@@ -1,0 +1,143 @@
+.institutional-settings {
+  margin-bottom: 34px;
+}
+
+.communication-settings {
+  display: grid;
+  gap: 18px;
+}
+
+.communication-settings-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.communication-settings-heading h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.communication-settings-heading p {
+  margin: 0;
+  max-width: 760px;
+}
+
+.template-token-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 520px;
+}
+
+.template-token-list code {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--primary);
+  font-size: 11px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.template-card {
+  display: grid;
+  gap: 18px;
+}
+
+.template-card-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.template-card-header > div:last-child {
+  min-width: 0;
+}
+
+.template-card-header small {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.template-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.template-name-input {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: 700 18px Manrope, Inter, sans-serif;
+}
+
+.template-name-input:focus {
+  box-shadow: none;
+  border-bottom: 1px solid var(--primary);
+}
+
+.template-card textarea {
+  resize: vertical;
+  min-height: 180px;
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--border);
+  line-height: 1.55;
+}
+
+.template-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.template-card-footer .checkbox-label {
+  margin: 0;
+}
+
+@media (max-width: 1050px) {
+  .communication-settings-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .template-token-list {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .template-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .template-card-footer button {
+    width: 100%;
+  }
+}

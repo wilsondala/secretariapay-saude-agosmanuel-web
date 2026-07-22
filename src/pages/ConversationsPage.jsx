@@ -3,6 +3,7 @@ import {
   BellRing,
   CheckCheck,
   Clock3,
+  MessageCircleMore,
   RefreshCcw,
   RotateCcw,
   Send,
@@ -26,12 +27,32 @@ const typeLabels = {
   SAME_DAY: 'No dia da consulta',
 };
 
+const defaultProviderStatus = {
+  provider: 'SIMULATED',
+  channel: 'WHATSAPP_SIMULATED',
+  configured: true,
+  realSending: false,
+};
+
 function apiMessage(error, fallback) {
   return error?.response?.data?.message || fallback;
 }
 
+function channelLabel(channel) {
+  if (channel === 'WHATSAPP_KAPSO') return 'WhatsApp via Kapso';
+  if (channel === 'WHATSAPP_SIMULATED') return 'WhatsApp simulado';
+  return channel || 'WhatsApp';
+}
+
+function compactProviderId(value) {
+  if (!value) return '';
+  if (value.length <= 24) return value;
+  return `${value.slice(0, 12)}…${value.slice(-8)}`;
+}
+
 export default function ConversationsPage() {
   const [rows, setRows] = useState([]);
+  const [providerStatus, setProviderStatus] = useState(defaultProviderStatus);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -54,7 +75,17 @@ export default function ConversationsPage() {
     }
   }
 
+  async function loadProviderStatus() {
+    try {
+      const response = await api.get('/api/v1/communication/provider-status');
+      setProviderStatus(response.data);
+    } catch {
+      setProviderStatus(defaultProviderStatus);
+    }
+  }
+
   useEffect(() => { load(); }, [filter]);
+  useEffect(() => { loadProviderStatus(); }, []);
 
   const summary = useMemo(() => ({
     pending: rows.filter((row) => row.status === 'PENDING').length,
@@ -63,6 +94,13 @@ export default function ConversationsPage() {
     failed: rows.filter((row) => row.status === 'FAILED').length,
     cancelled: rows.filter((row) => row.status === 'CANCELLED').length,
   }), [rows]);
+
+  const realSending = providerStatus.realSending;
+  const providerReady = providerStatus.configured;
+
+  async function refreshAll() {
+    await Promise.all([load(), loadProviderStatus()]);
+  }
 
   async function processDue() {
     setProcessing(true);
@@ -104,13 +142,29 @@ export default function ConversationsPage() {
       <PageHeader
         eyebrow="Comunicação"
         title="Lembretes de consultas"
-        description="Fila simulada para validar envio, falha, reenvio e entrega, sem integração externa. Todos os horários são exibidos na hora de Angola."
+        description={realSending
+          ? 'Envio de mensagens pelo WhatsApp através da Kapso. Todos os horários são exibidos na hora de Angola.'
+          : 'Fila simulada para validar envio, falha, reenvio e entrega. Todos os horários são exibidos na hora de Angola.'}
         action={(
-          <button type="button" className="secondary-button compact" onClick={load}>
+          <button type="button" className="secondary-button compact" onClick={refreshAll}>
             <RefreshCcw size={18} /> Atualizar
           </button>
         )}
       />
+
+      <div className={`provider-banner ${realSending ? (providerReady ? 'provider-live' : 'provider-warning') : 'provider-simulated'}`}>
+        <MessageCircleMore size={20} />
+        <div>
+          <strong>{realSending ? 'Kapso — WhatsApp conectado' : 'Provedor simulado'}</strong>
+          <span>
+            {realSending
+              ? providerReady
+                ? 'O botão de envio realiza uma chamada real para a API da Kapso.'
+                : 'A Kapso foi selecionada, mas a API Key ou o Phone Number ID ainda não foram configurados.'
+              : 'Nenhuma mensagem externa é enviada neste modo.'}
+          </span>
+        </div>
+      </div>
 
       <div className="reminder-summary">
         <article className="panel"><span>Pendentes</span><strong>{summary.pending}</strong></article>
@@ -130,7 +184,12 @@ export default function ConversationsPage() {
           </select>
         </label>
         <div className="reminder-actions">
-          <button type="button" className="primary-button compact" disabled={processing} onClick={processDue}>
+          <button
+            type="button"
+            className="primary-button compact"
+            disabled={processing || (realSending && !providerReady)}
+            onClick={processDue}
+          >
             <BellRing size={18} /> {processing ? 'A processar...' : 'Processar vencidos'}
           </button>
         </div>
@@ -156,7 +215,7 @@ export default function ConversationsPage() {
             {!loading && rows.length === 0 && (
               <tr>
                 <td colSpan="6">
-                  Nenhum lembrete encontrado. Confirme ou reagende uma consulta para gerar a fila simulada.
+                  Nenhum lembrete encontrado. Confirme ou reagende uma consulta para gerar a fila.
                 </td>
               </tr>
             )}
@@ -168,7 +227,7 @@ export default function ConversationsPage() {
                 </td>
                 <td>
                   <strong className="reminder-type"><Clock3 size={16} /> {typeLabels[row.reminderType]}</strong>
-                  <span>{row.channel === 'WHATSAPP_SIMULATED' ? 'WhatsApp simulado' : row.channel}</span>
+                  <span>{channelLabel(row.channel)}</span>
                 </td>
                 <td>
                   <strong>{formatAngolaDateTime(row.scheduledFor)}</strong>
@@ -193,6 +252,11 @@ export default function ConversationsPage() {
                   <small className="reminder-attempts">
                     {row.attemptCount} tentativa{row.attemptCount === 1 ? '' : 's'}
                   </small>
+                  {row.providerMessageId && (
+                    <small className="provider-message-id" title={row.providerMessageId}>
+                      ID: {compactProviderId(row.providerMessageId)}
+                    </small>
+                  )}
                 </td>
                 <td>
                   <div className="reminder-row-actions">
@@ -201,29 +265,31 @@ export default function ConversationsPage() {
                         <button
                           type="button"
                           className="secondary-button reminder-send-button"
-                          disabled={actionBusy(row.id)}
+                          disabled={actionBusy(row.id) || (realSending && !providerReady)}
                           onClick={() => runAction(
                             row.id,
                             'send-now',
-                            'Envio simulado concluído.',
-                            'Não foi possível simular o envio.',
+                            realSending ? 'Mensagem enviada pela Kapso.' : 'Envio simulado concluído.',
+                            realSending ? 'Não foi possível enviar a mensagem pela Kapso.' : 'Não foi possível simular o envio.',
                           )}
                         >
-                          <Send size={16} /> Simular envio
+                          <Send size={16} /> {realSending ? 'Enviar WhatsApp' : 'Simular envio'}
                         </button>
-                        <button
-                          type="button"
-                          className="secondary-button reminder-fail-button"
-                          disabled={actionBusy(row.id)}
-                          onClick={() => runAction(
-                            row.id,
-                            'simulate-failure',
-                            'Falha simulada e registada.',
-                            'Não foi possível simular a falha.',
-                          )}
-                        >
-                          <TriangleAlert size={16} /> Simular falha
-                        </button>
+                        {!realSending && (
+                          <button
+                            type="button"
+                            className="secondary-button reminder-fail-button"
+                            disabled={actionBusy(row.id)}
+                            onClick={() => runAction(
+                              row.id,
+                              'simulate-failure',
+                              'Falha simulada e registada.',
+                              'Não foi possível simular a falha.',
+                            )}
+                          >
+                            <TriangleAlert size={16} /> Simular falha
+                          </button>
+                        )}
                       </>
                     )}
 
@@ -231,11 +297,11 @@ export default function ConversationsPage() {
                       <button
                         type="button"
                         className="secondary-button reminder-send-button"
-                        disabled={actionBusy(row.id)}
+                        disabled={actionBusy(row.id) || (realSending && !providerReady)}
                         onClick={() => runAction(
                           row.id,
                           'retry',
-                          'Reenvio simulado concluído.',
+                          realSending ? 'Reenvio realizado pela Kapso.' : 'Reenvio simulado concluído.',
                           'Não foi possível reenviar o lembrete.',
                         )}
                       >
@@ -243,7 +309,7 @@ export default function ConversationsPage() {
                       </button>
                     )}
 
-                    {row.status === 'SENT' && (
+                    {row.status === 'SENT' && !realSending && (
                       <button
                         type="button"
                         className="secondary-button reminder-delivery-button"
@@ -257,6 +323,10 @@ export default function ConversationsPage() {
                       >
                         <CheckCheck size={16} /> Confirmar entrega
                       </button>
+                    )}
+
+                    {row.status === 'SENT' && realSending && (
+                      <small className="awaiting-webhook">Aguardando confirmação da Kapso</small>
                     )}
 
                     {['DELIVERED', 'CANCELLED'].includes(row.status) && '—'}
